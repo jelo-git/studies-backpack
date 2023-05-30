@@ -3,6 +3,8 @@
 #include <cmath>
 #include <algorithm>
 #include <vector>
+#include <chrono>
+#include <fstream>
 
 #define MAX_WEIGHT 10
 #define MIN_WEIGHT 1
@@ -10,6 +12,7 @@
 #define MIN_PRICE 1
 
 using namespace std;
+using namespace chrono;
 //[price,weight]
 class Backpack
 {
@@ -23,7 +26,7 @@ private:
 
 public:
     int **storage, backpackCap, numberOfItems;
-    Backpack(int rozmiar, int iloscElementow)
+    Backpack(int iloscElementow, int rozmiar)
     {
         preconstruct(iloscElementow, rozmiar);
         srand(time(NULL));
@@ -97,7 +100,7 @@ void printPouch(vector<int> pouch)
     cout << "plecak: {";
     for (int n = 0; n < pouch.size(); n++)
     {
-        cout << pouch[n] << ", ";
+        cout << pouch[n] << ((n + 1) != pouch.size() ? ", " : "");
     }
     cout << "}" << endl;
 }
@@ -235,24 +238,164 @@ int **dynamicMatrix(Backpack bp)
     return matrix;
 }
 
+// tests
+void test()
+{
+    ofstream file("output.txt");
+    // Wykonaj dla każdego algorytmu wykres t=f(n) zależności czasu obliczeń t od liczby n przedmiotów, przy stałej pojemności plecaka b.
+    file << "\nPart 1\n";
+
+    file << "brute: ";
+    for (int n = 8; n <= 26; n += 2)
+    {
+        // brute n>30 => inf time
+        Backpack bp(n, 12);
+        auto start = high_resolution_clock::now();
+        int *out = bruteForce(bp);
+        auto stop = high_resolution_clock::now();
+        auto duration = duration_cast<microseconds>(stop - start);
+        file << "(" << n << "," << duration.count() << ")";
+    }
+    file << "\ngreed: ";
+    for (int n = 100; n <= 1000; n += 100)
+    {
+        Backpack bp(n, 200);
+        vector<int> pouch;
+        auto start = high_resolution_clock::now();
+        greedy(bp, pouch);
+        auto stop = high_resolution_clock::now();
+        auto duration = duration_cast<microseconds>(stop - start);
+        file << "(" << n << "," << duration.count() << ")";
+    }
+    file << "\ndynam: ";
+    for (int n = 100; n <= 1000; n += 100)
+    {
+        Backpack bp(n, 200);
+        vector<int> pouch;
+        auto start = high_resolution_clock::now();
+        readMatrix(bp, dynamicMatrix(bp), pouch);
+        auto stop = high_resolution_clock::now();
+        auto duration = duration_cast<microseconds>(stop - start);
+        file << "(" << n << "," << duration.count() << ")";
+    }
+
+    // Wykonaj dla każdego algorytmu wykres t=f(b) zależności czasu obliczeń t od pojemności plecaka b, przy stałej liczbie przedmiotów n.
+    file << "\nPart 3\n";
+
+    file << "brute: ";
+    for (int n = 8; n <= 26; n += 2)
+    {
+        // brute n>30 => inf time
+        Backpack bp(16, n);
+        auto start = high_resolution_clock::now();
+        int *out = bruteForce(bp);
+        auto stop = high_resolution_clock::now();
+        auto duration = duration_cast<microseconds>(stop - start);
+        file << "(" << n << "," << duration.count() << ")";
+    }
+    file << "\ngreed: ";
+    for (int n = 100; n <= 1000; n += 100)
+    {
+        Backpack bp(500, n);
+        vector<int> pouch;
+        auto start = high_resolution_clock::now();
+        greedy(bp, pouch);
+        auto stop = high_resolution_clock::now();
+        auto duration = duration_cast<microseconds>(stop - start);
+        file << "(" << n << "," << duration.count() << ")";
+    }
+    file << "\ndynam: ";
+    for (int n = 100; n <= 1000; n += 100)
+    {
+        Backpack bp(500, n);
+        vector<int> pouch;
+        auto start = high_resolution_clock::now();
+        readMatrix(bp, dynamicMatrix(bp), pouch);
+        auto stop = high_resolution_clock::now();
+        auto duration = duration_cast<microseconds>(stop - start);
+        file << "(" << n << "," << duration.count() << ")";
+    }
+
+    // Wykonaj dla każdego algorytmu wykres t=f(n,b) zależności czasu obliczeń t od liczby n przedmiotów i pojemności plecaka b.
+    file << "\nPart 4\n";
+
+    for (int m = 10; m <= 20; m++)
+    {
+        file << endl
+             << m << " brute: ";
+        for (int n = 10; n <= 20; n++)
+        {
+            // brute n>30 => inf time
+            Backpack bp(n, m);
+            auto start = high_resolution_clock::now();
+            int *out = bruteForce(bp);
+            auto stop = high_resolution_clock::now();
+            auto duration = duration_cast<microseconds>(stop - start);
+            file << "(" << n << "," << duration.count() << ")";
+        }
+    }
+    for (int m = 100; m <= 1000; m += 100)
+    {
+        file << endl
+             << m << " greed: ";
+        for (int n = 100; n <= 1000; n += 100)
+        {
+            Backpack bp(n, m);
+            vector<int> pouch;
+            auto start = high_resolution_clock::now();
+            greedy(bp, pouch);
+            auto stop = high_resolution_clock::now();
+            auto duration = duration_cast<microseconds>(stop - start);
+            file << "(" << n << "," << duration.count() << ")";
+        }
+    }
+    for (int m = 100; m <= 1000; m += 100)
+    {
+        file << endl
+             << m << " dynam: ";
+        for (int n = 100; n <= 1000; n += 100)
+        {
+            Backpack bp(n, m);
+            vector<int> pouch;
+            auto start = high_resolution_clock::now();
+            readMatrix(bp, dynamicMatrix(bp), pouch);
+            auto stop = high_resolution_clock::now();
+            auto duration = duration_cast<microseconds>(stop - start);
+            file << "(" << n << "," << duration.count() << ")";
+        }
+    }
+    file.close();
+}
+
 int main()
 {
-    Backpack bp("test.txt");
+    test();
+
+    // Backpack bp("test.txt");
+    // int backpackSize = 10, noElements = 24;
+    // Backpack bp(noElements, backpackSize);
+
+    // cout << "brute force\n";
 
     // int *brute = bruteForce(bp);
     // cout << "price: " << brute[0] << "\nweight: " << brute[1] << endl;
     // printMask(bp, brute[2]);
 
+    // cout << "\ngreedy\n";
+
     // vector<int> greedypouch;
-    // greedy(bp, greedypouch);
+    // int *greed = greedy(bp, greedypouch);
+    // cout << "price: " << greed[0] << "\nweight: " << greed[1] << endl;
     // printPouch(greedypouch);
 
-    vector<int> dynamicpouch;
-    int **out = dynamicMatrix(bp);
-    printMatrix(bp, out);
-    int *dyn = readMatrix(bp, out, dynamicpouch);
-    cout << "price: " << dyn[0] << "\nweight: " << dyn[1] << endl;
-    printPouch(dynamicpouch);
+    // cout << "\ndynamic programming\n";
+
+    // vector<int> dynamicpouch;
+    // int **out = dynamicMatrix(bp);
+    // printMatrix(bp, out);
+    // int *dyn = readMatrix(bp, out, dynamicpouch);
+    // cout << "price: " << dyn[0] << "\nweight: " << dyn[1] << endl;
+    // printPouch(dynamicpouch);
 
     return 0;
 }
