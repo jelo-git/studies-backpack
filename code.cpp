@@ -10,7 +10,7 @@
 #define MIN_PRICE 1
 
 using namespace std;
-
+//[price,weight]
 class Backpack
 {
 private:
@@ -92,6 +92,15 @@ void quickSort(int **arr, int start, int end)
     quickSort(arr, start, idx - 1);
     quickSort(arr, idx + 1, end);
 }
+void printPouch(vector<int> pouch)
+{
+    cout << "plecak: {";
+    for (int n = 0; n < pouch.size(); n++)
+    {
+        cout << pouch[n] << ", ";
+    }
+    cout << "}" << endl;
+}
 
 // brute force functions
 void printMask(Backpack bp, int mask)
@@ -140,15 +149,6 @@ int *bruteForce(Backpack bp)
 }
 
 // greedy functions
-void printGreedy(vector<int> pouch)
-{
-    cout << "plecak: {";
-    for (int n = 0; n < pouch.size(); n++)
-    {
-        cout << pouch[n] << ", ";
-    }
-    cout << "}" << endl;
-}
 int **copyStorage(Backpack bp)
 {
     int **newStorage = new int *[bp.numberOfItems]; //[price,weight,originalIndex]
@@ -180,17 +180,79 @@ int *greedy(Backpack bp, vector<int> &pouch)
     return out;
 }
 
+// dynamic functions
+void printMatrix(Backpack bp, int **matrix)
+{
+    for (int n = 0; n < bp.numberOfItems + 1; n++)
+    {
+        for (int m = 0; m < bp.backpackCap + 1; m++)
+        {
+            cout << matrix[n][m] << "  ";
+        }
+        cout << endl;
+    }
+}
+int *readMatrix(Backpack bp, int **matrix, vector<int> &pouch)
+{
+    int *out = new int[2]; //[price, weight]
+    out[0] = matrix[bp.numberOfItems][bp.backpackCap];
+    out[1] = 0;
+    int n = bp.numberOfItems;
+    int m = bp.backpackCap;
+    while (matrix[n][m] != 0)
+    {
+        if (matrix[n - 1][m] != matrix[n][m])
+        {
+            pouch.push_back(n);
+            out[1] += bp.storage[n - 1][1];
+            m -= bp.storage[n - 1][1];
+        }
+        n--;
+    }
+    return out;
+}
+int **dynamicMatrix(Backpack bp)
+{
+    int **matrix = new int *[bp.numberOfItems + 1];
+    for (int n = 0; n < bp.numberOfItems + 1; n++)
+    {
+        matrix[n] = new int[bp.backpackCap + 1];
+        for (int m = 0; m < bp.backpackCap + 1; m++)
+        {
+            matrix[n][m] = 0;
+        }
+    }
+    for (int n = 0; n < bp.numberOfItems; n++)
+    {
+        for (int m = 0; m < bp.backpackCap + 1; m++)
+        {
+            if (m - bp.storage[n][1] >= 0)
+                matrix[n + 1][m] = max(matrix[n][m - bp.storage[n][1]] + bp.storage[n][0], matrix[n][m]);
+            else
+                matrix[n + 1][m] = matrix[n][m];
+        }
+    }
+    return matrix;
+}
+
 int main()
 {
+    Backpack bp("test.txt");
+
     // int *brute = bruteForce(bp);
     // cout << "price: " << brute[0] << "\nweight: " << brute[1] << endl;
     // printMask(bp, brute[2]);
 
-    Backpack bp("test.txt");
+    // vector<int> greedypouch;
+    // greedy(bp, greedypouch);
+    // printPouch(greedypouch);
 
-    vector<int> pouch;
-    greedy(bp, pouch);
-    printGreedy(pouch);
+    vector<int> dynamicpouch;
+    int **out = dynamicMatrix(bp);
+    printMatrix(bp, out);
+    int *dyn = readMatrix(bp, out, dynamicpouch);
+    cout << "price: " << dyn[0] << "\nweight: " << dyn[1] << endl;
+    printPouch(dynamicpouch);
 
     return 0;
 }
